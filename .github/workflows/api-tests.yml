@@ -23,7 +23,9 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm ci --registry=https://registry.npmjs.org/
+          node -e "require('express'); console.log('express installed')"
 
       - name: Run API, wait for health check, and execute tests
         run: |
