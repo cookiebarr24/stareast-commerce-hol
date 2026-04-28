@@ -6,4 +6,6 @@ yarn-error.log*
 .env.*
 .DS_Store
 coverage/
+.nyc_output/
 dist/
+mochawesome-report/
