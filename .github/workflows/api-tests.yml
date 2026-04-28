@@ -25,21 +25,31 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run API in background
-        run: npm start &
-
-      - name: Wait for API health check
+      - name: Run API, wait for health check, and execute tests
         run: |
+          npm start > api.log 2>&1 &
+          API_PID=$!
+          echo "API PID: $API_PID"
+
+          cleanup() {
+            kill $API_PID 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
           for i in {1..30}; do
             if curl -fsS "http://localhost:3000/healthcheck" > /dev/null; then
               echo "API is healthy"
-              exit 0
+              break
             fi
             echo "Waiting for API..."
             sleep 2
           done
-          echo "API did not become healthy in time"
-          exit 1
 
-      - name: Run tests
-        run: npm run test:pathCoverage
+          if ! curl -fsS "http://localhost:3000/healthcheck" > /dev/null; then
+            echo "API did not become healthy in time"
+            echo "---- API LOG ----"
+            cat api.log
+            exit 1
+          fi
+
+          npm run test:pathCoverage
