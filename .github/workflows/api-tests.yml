@@ -1,0 +1,57 @@
+name: API Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci --registry=https://registry.npmjs.org/
+          node -e "require('express'); console.log('express installed')"
+
+      - name: Run API, wait for health check, and execute tests
+        run: |
+          npm start > api.log 2>&1 &
+          API_PID=$!
+          echo "API PID: $API_PID"
+
+          cleanup() {
+            kill $API_PID 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for i in {1..30}; do
+            if curl -fsS "http://localhost:3000/healthcheck" > /dev/null; then
+              echo "API is healthy"
+              break
+            fi
+            echo "Waiting for API..."
+            sleep 2
+          done
+
+          if ! curl -fsS "http://localhost:3000/healthcheck" > /dev/null; then
+            echo "API did not become healthy in time"
+            echo "---- API LOG ----"
+            cat api.log
+            exit 1
+          fi
+
+          npm run test:pathCoverage

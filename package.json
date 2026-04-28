@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "start-server-and-test start http-get://localhost:3000/healthcheck test:pathCoverage",
-    "test:pathCoverage": "mocha \"test/pathCoverage/**/*.test.js\" --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=path-coverage-report,overwrite=true,html=true,json=true"
+    "test:pathCoverage": "mocha \"test/pathCoverage/**/*.test.js\" --reporter mochawesome --reporter-options reportDir=mochawesome-report,reportFilename=path-coverage-report,overwrite=true,html=true,json=true",
+    "test:load:login": "k6 run test/loadTesting/login-load-test.js"
   },
   "keywords": [],
   "author": "",
